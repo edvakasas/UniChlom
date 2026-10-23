@@ -7,29 +7,29 @@ Course project for **Software Systems Design** at VILNIUS TECH. The idea comes f
 ## Status
 
 - **Stage I, design document:** done ([docs/I-etapas-projektavimo-dokumentas.md](docs/I-etapas-projektavimo-dokumentas.md), in Lithuanian)
-- **Stage II, working prototype:** in progress
+- **Stage II, working prototype:** in progress. The design and planned stack below describe what is being built; code will be added here as it is written.
 
-## What it does
+## What it will do
 
-- Builds an estimate from the selected jobs, parts, vehicle class and customer type
-- Avoids charging twice for shared operations (for example, removing the front wheels for both brake pads and discs)
-- Applies one discount per labour line, the best of the job promotion and the regular-customer discount, never stacked
-- Adds the parts markup, calculates 21% VAT and rounds money to the cent
-- Flags estimates that go over the customer's price limit
-- Keeps each workshop's price list and estimates separate from other workshops
+- Build an estimate from the selected jobs, parts, vehicle class and customer type
+- Avoid charging twice for shared operations (for example, removing the front wheels for both brake pads and discs)
+- Apply one discount per labour line, the best of the job promotion and the regular-customer discount, never stacked
+- Add the parts markup, calculate 21% VAT and round money to the cent
+- Flag estimates that go over the customer's price limit
+- Keep each workshop's price list and estimates separate from other workshops
 
-## Design
+## Planned design
 
 - The calculation module (`EstimateCalculator`) is plain Java with no Spring or database dependencies, so every rule can be unit tested on its own
 - Discounts follow the strategy pattern (`DiscountRule`), so a new discount can be added without changing existing code
 - All money is handled with `BigDecimal` (HALF_UP to the cent), never `double`
 - Every repository query is filtered by workshop ID
 
-## Tech stack
+## Planned tech stack
 
 Java 21, Spring Boot 3 (Web, Data JPA), H2, JUnit 5, Maven
 
-## Example
+## Example (from the design document)
 
 Passenger car, not a regular customer. Jobs: front brake pads (D01) and oil and filter change (D03). Parts: brake pads €30.00, 4 l of oil at €8.00, oil filter €6.50.
 
