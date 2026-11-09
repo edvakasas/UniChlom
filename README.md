@@ -63,7 +63,13 @@ D01 and D02 share the operation "remove front wheels" (0.4 h); B04 and B05 share
 
 The workshop is chosen with the `X-Tenant-Id` header (`alfa` or `beta`). In stage III it will come from the logged-in user.
 
-**Easiest:** open <http://localhost:8080/swagger-ui.html>, pick an endpoint, click *Try it out*, enter `alfa` as `X-Tenant-Id` and paste a file from [`demo/`](demo) as the body.
+**With the form:** open <http://localhost:8080>. It is a simple HTML page ([`static/index.html`](src/main/resources/static/index.html)) that only collects input and shows results; all calculation happens on the server.
+
+1. Main scenario: workshop *Autoservisas Alfa*, class `VISUREIGIS`, tick *Nuolatinis klientas*, limit `250`, jobs D01, D02, D05, parts *Stabdžių kaladėlės* 30.00 × 1 and *Stabdžių diskai* 45.00 × 2 → **€326.22**, *LAUKIA_PATVIRTINIMO (riba viršyta 76.22 €)*.
+2. Click *Klientas patvirtino* → *PATVIRTINTA*.
+3. Error: switch the workshop to *Beta*, tick B03, set a part quantity to 0 → the errors are listed in red and nothing is saved. (Choosing Beta also shows that each workshop sees only its own jobs.)
+
+**With Swagger UI:** open <http://localhost:8080/swagger-ui.html>, pick an endpoint, click *Try it out*, enter `alfa` as `X-Tenant-Id` and paste a file from [`demo/`](demo) as the body.
 
 **Or with curl** (on Windows PowerShell write `curl.exe`, not `curl`), from the project folder:
 
@@ -107,6 +113,12 @@ Design choices:
 - Each discount is its own class behind `DiscountRule`; the calculator only picks the largest. A new discount is a new class, not an edit to the calculator.
 - Money is `BigDecimal`, never `double`.
 - Repositories extend Spring's bare `Repository`, not `JpaRepository`, so there is no `findById` without a workshop id: isolation is enforced in code, not by hiding things in the UI. Another workshop's estimate returns the same 404 as a missing one.
+
+## Differences from the Stage I plan
+
+- **Database:** the plan said a file-based H2 database; the prototype uses in-memory H2, so every start gives the same clean sample data for the demo and the tests. Switching to a file or PostgreSQL is a change in `application.properties` only.
+- **Interface:** the plan's simple HTML form is there; Swagger UI was added as a second way to call the API.
+- **Seeded estimates:** quality check 4.2 in the design document mentions three saved estimates per workshop; the prototype seeds none and the isolation tests create their own. The full 4.2 check is planned for stage III.
 
 ## Tech stack
 
