@@ -1,0 +1,8 @@
+{
+  "carClass": "LENGVASIS",
+  "regularCustomer": false,
+  "workCodes": ["D01", "B03"],
+  "parts": [
+    {"name": "Stabdžių kaladėlės", "unitCost": 30.00, "quantity": 0}
+  ]
+}

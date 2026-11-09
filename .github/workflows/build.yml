@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run tests
+        run: mvn -B verify
+      - name: Start the app and run the demo request
+        run: |
+          java -jar target/estimate-calculator-0.2.0.jar &
+          for i in $(seq 1 30); do curl -sf localhost:8080/api/works -H 'X-Tenant-Id: alfa' >/dev/null && break; sleep 2; done
+          curl -sf -X POST localhost:8080/api/estimates -H 'X-Tenant-Id: alfa' \
+               -H 'Content-Type: application/json' -d @demo/1-virs-ribos.json | tee response.json
+          grep -q '"total":326.22' response.json
