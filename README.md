@@ -6,47 +6,112 @@ Course project for **Software Systems Design** at VILNIUS TECH. The idea comes f
 
 ## Status
 
-- **Stage I, design document:** done ([docs/I-etapas-projektavimo-dokumentas.md](docs/I-etapas-projektavimo-dokumentas.md), in Lithuanian)
-- **Stage II, working prototype:** in progress. The design and planned stack below describe what is being built; code will be added here as it is written.
+- **Stage I, design document:** done and approved ([docs/I-etapas-projektavimo-dokumentas.md](docs/I-etapas-projektavimo-dokumentas.md), in Lithuanian)
+- **Stage II, working prototype:** this code. REST API with the core module, two workshops (tenants) with sample data, automated tests.
 
-## What it will do
+## Requirements
 
-- Build an estimate from the selected jobs, parts, vehicle class and customer type
-- Avoid charging twice for shared operations (for example, removing the front wheels for both brake pads and discs)
-- Apply one discount per labour line, the best of the job promotion and the regular-customer discount, never stacked
-- Add the parts markup, calculate 21% VAT and round money to the cent
-- Flag estimates that go over the customer's price limit
-- Keep each workshop's price list and estimates separate from other workshops
-
-## Planned design
-
-- The calculation module (`EstimateCalculator`) is plain Java with no Spring or database dependencies, so every rule can be unit tested on its own
-- Discounts follow the strategy pattern (`DiscountRule`), so a new discount can be added without changing existing code
-- All money is handled with `BigDecimal` (HALF_UP to the cent), never `double`
-- Every repository query is filtered by workshop ID
-
-## Planned tech stack
-
-Java 21, Spring Boot 3 (Web, Data JPA), H2, JUnit 5, Maven
-
-## Example (from the design document)
-
-Passenger car, not a regular customer. Jobs: front brake pads (D01) and oil and filter change (D03). Parts: brake pads €30.00, 4 l of oil at €8.00, oil filter €6.50.
-
-| | Amount |
+| Tool | Version |
 |---|---|
-| Labour | €60.00 |
-| Parts (with 20% markup) | €82.20 |
-| Subtotal | €142.20 |
-| VAT 21% | €29.86 |
-| **Total** | **€172.06** |
+| Java (JDK) | 21 |
+| Maven | 3.9 or newer |
 
-## Planned API
+Nothing else is needed: the database (H2) runs in memory inside the app. No API keys.
 
-- `POST /api/estimates` calculate and save an estimate
-- `GET /api/estimates/{id}` view a saved estimate
-- `GET /api/works` list the workshop's jobs
+Check: `java -version` and `mvn -v`.
+
+## Run
+
+```
+mvn spring-boot:run
+```
+
+The app starts on <http://localhost:8080>. Every start creates a fresh database and loads the sample data from [`src/main/resources/data.sql`](src/main/resources/data.sql).
+
+Configuration ([`application.properties`](src/main/resources/application.properties)): the only setting you may want to change is the port, via the `PORT` environment variable (default 8080).
+
+## Test
+
+```
+mvn test
+```
+
+| Test | What it checks |
+|---|---|
+| `EstimateCalculatorTest.normalCase_...` | Normal case: D01 + D03 with parts → total **€172.06**, status `PARENGTA` |
+| `EstimateCalculatorTest.boundary_...` | Total exactly equal to the customer's limit (€172.06) → still `PARENGTA` |
+| `EstimateCalculatorTest.conflict_...` | Shared operation charged once, largest discount wins (20 % not 25 %), limit exceeded → **€326.22**, `LAUKIA_PATVIRTINIMO`, over by €76.22 |
+| `EstimateCalculatorTest.error_...` | Other workshop's job code and zero quantity → rejected with both messages, nothing calculated |
+| `TenantIsolationTest` (3 tests) | Workshop `alfa` cannot read, list or approve workshop `beta`'s estimate, nor use `beta`'s price list |
+| `EstimateApiTest` | The demo scenario through HTTP and the database, then approval (and a second approval is refused) |
+
+Every push also runs the tests and a demo request on GitHub Actions (see the badge on the Actions tab).
+
+## Sample data (two tenants)
+
+| | Autoservisas Alfa (`alfa`) | Autoservisas Beta (`beta`) |
+|---|---|---|
+| Hourly rate | €40.00 | €45.00 |
+| Parts markup | 20 % | 15 % |
+| Regular-customer discount | 5 % | 10 % |
+| Car class coefficients | 1.00 / 1.20 / 1.30 | 1.00 / 1.15 / 1.25 |
+| Jobs | D01 front brake pads (1.0 h), D02 front brake discs (1.6 h), D03 oil change (0.5 h), D05 diagnostics (0.5 h, 20 % promotion) | B01–B05 (balancing, tyres with 10 % promotion, suspension check, rear pads and discs) |
+
+D01 and D02 share the operation "remove front wheels" (0.4 h); B04 and B05 share "remove rear wheels". VAT is 21 % for both.
+
+## Demo
+
+The workshop is chosen with the `X-Tenant-Id` header (`alfa` or `beta`). In stage III it will come from the logged-in user.
+
+**Easiest:** open <http://localhost:8080/swagger-ui.html>, pick an endpoint, click *Try it out*, enter `alfa` as `X-Tenant-Id` and paste a file from [`demo/`](demo) as the body.
+
+**Or with curl** (on Windows PowerShell write `curl.exe`, not `curl`), from the project folder:
+
+1. Main scenario, over the customer's limit:
+   ```
+   curl -X POST localhost:8080/api/estimates -H "X-Tenant-Id: alfa" -H "Content-Type: application/json" -d @demo/1-virs-ribos.json
+   ```
+   Expected: D01 0.8 h → €30.40, D02 2.0 h → €76.00, D05 0.6 h → €19.20; parts €144.00; subtotal €269.60, VAT €56.62, **total €326.22**, status `LAUKIA_PATVIRTINIMO`, `overLimitBy` €76.22. Note the returned `id` (1 on a fresh start).
+2. Customer approves: `curl -X POST localhost:8080/api/estimates/1/approve -H "X-Tenant-Id: alfa"` → status `PATVIRTINTA`. Running it again → 409, already approved.
+3. Error case: `curl -X POST localhost:8080/api/estimates -H "X-Tenant-Id: alfa" -H "Content-Type: application/json" -d @demo/3-klaida.json` → 400 with *"Nežinomas darbo kodas: B03"* and *"Detalės „Stabdžių kaladėlės“ kiekis turi būti didesnis už 0"*; nothing is saved.
+4. Tenant isolation: `curl localhost:8080/api/estimates/1 -H "X-Tenant-Id: beta"` → 404, Beta cannot see Alfa's estimate. `curl localhost:8080/api/estimates -H "X-Tenant-Id: beta"` → empty list.
+5. Normal case: `demo/2-iprastas.json` → total €172.06, status `PARENGTA`.
+
+## API
+
+| Method and path | Does |
+|---|---|
+| `GET /api/works` | The workshop's price list |
+| `POST /api/estimates` | Calculate and save an estimate (201), or 400 with every validation error |
+| `GET /api/estimates` | The workshop's estimates, newest first |
+| `GET /api/estimates/{id}` | One estimate (404 if it belongs to another workshop) |
+| `POST /api/estimates/{id}/approve` | Customer approves an estimate that is over their limit (409 if not awaiting approval) |
+
+## Code structure
+
+```
+src/main/java/lt/samata/
+  domain/        core module, plain Java (no Spring, no database)
+    EstimateCalculator         rules R1–R7: shared operations, billed hours, discounts, parts, VAT, price limit
+    EstimateRequestValidator   rule R8: rejects bad input, reports every problem at once
+    discount/                  DiscountRule interface (strategy pattern) + PromotionDiscount, RegularCustomerDiscount
+    Money                      the one place money is rounded (to the cent, HALF_UP)
+  service/       EstimateService: load price list -> calculate -> save, always for one workshop
+  persistence/   JPA entities and repositories; every query is filtered by workshop id
+  web/           REST controller and error-to-HTTP mapping
+```
+
+Design choices:
+
+- The core module has no Spring or database code, so each rule is unit tested directly; Spring wires it in `EstimateApplication`.
+- Each discount is its own class behind `DiscountRule`; the calculator only picks the largest. A new discount is a new class, not an edit to the calculator.
+- Money is `BigDecimal`, never `double`.
+- Repositories extend Spring's bare `Repository`, not `JpaRepository`, so there is no `findById` without a workshop id: isolation is enforced in code, not by hiding things in the UI. Another workshop's estimate returns the same 404 as a missing one.
+
+## Tech stack
+
+Java 21, Spring Boot 3.5 (Web, Data JPA), H2, JUnit 5, AssertJ, MockMvc, springdoc (Swagger UI), Maven, GitHub Actions
 
 ---
 
-**LT:** Autoserviso sąmatų skaičiuoklė. Programų sistemų projektavimo kursinis darbas: sistema mažiems autoservisams, apskaičiuojanti remonto sąmatą pagal serviso kainoraštį, nuolaidų taisykles ir PVM.
+**LT:** Autoserviso sąmatų skaičiuoklė. Programų sistemų projektavimo kursinis darbas: sistema mažiems autoservisams, apskaičiuojanti remonto sąmatą pagal serviso kainoraštį, nuolaidų taisykles ir PVM. Paleidimas: `mvn spring-boot:run`, testai: `mvn test`.
