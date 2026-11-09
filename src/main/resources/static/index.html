@@ -56,12 +56,20 @@
   <button type="submit">Skaičiuoti</button>
 </form>
 
+<fieldset>
+  <legend>Išsaugota sąmata (pasirinkto serviso)</legend>
+  <label>Sąmatos Nr. <input type="number" id="estimate-id" min="1"></label>
+  <button type="button" id="view">Peržiūrėti</button>
+</fieldset>
+
 <div id="result"></div>
 
 <script>
 // The page only collects input and shows results: every calculation happens on the server (EstimateCalculator).
 const $ = id => document.getElementById(id);
-const euro = n => Number(n).toFixed(2) + ' €';
+const decimal = n => String(n).replace('.', ',');
+const euro = n => decimal(Number(n).toFixed(2)) + ' €';
+const STATUS = { PARENGTA: 'Parengta', LAUKIA_PATVIRTINIMO: 'Laukia kliento patvirtinimo', PATVIRTINTA: 'Patvirtinta' };
 const esc = text => String(text).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
 function api(method, path, body) {
@@ -80,7 +88,7 @@ async function loadWorks() {
     const label = document.createElement('label');
     const promo = work.promotionPercent ? ` (akcija −${work.promotionPercent} %)` : '';
     label.innerHTML = `<input type="checkbox" value="${esc(work.code)}"> `;
-    label.append(`${work.code} ${work.name}, ${work.normHours} h${promo}`);
+    label.append(`${work.code} ${work.name}, ${decimal(work.normHours)} h${promo}`);
     $('works').append(label);
   }
 }
@@ -107,7 +115,7 @@ function readRequest() {
     parts: [...$('parts').rows].map(row => ({
       name: row.querySelector('.part-name').value,
       unitCost: numberOrNull(row.querySelector('.part-cost').value),
-      quantity: numberOrNull(row.querySelector('.part-qty').value)
+      qty: numberOrNull(row.querySelector('.part-qty').value)
     })),
     priceLimit: numberOrNull($('limit').value)
   };
@@ -124,12 +132,12 @@ function showErrors(errors) {
 
 function showEstimate({ id, estimate }) {
   const labor = estimate.laborLines.map(line => `<tr><td>${esc(line.code)}</td><td>${esc(line.name)}</td>
-      <td class="num">${line.billedHours} h</td><td class="num">${euro(line.price)}</td>
-      <td class="num">${Number(line.discountPercent)} %</td><td class="num">${euro(line.finalPrice)}</td></tr>`).join('');
+      <td class="num">${decimal(Number(line.billedHours).toFixed(1))} h</td><td class="num">${euro(line.price)}</td>
+      <td class="num">${decimal(Number(line.discountPercent))} %</td><td class="num">${euro(line.finalPrice)}</td></tr>`).join('');
   const parts = estimate.partLines.map(line => `<tr><td colspan="2">${esc(line.name)}</td>
-      <td class="num">${line.quantity}</td><td class="num">${euro(line.unitCost)}</td>
+      <td class="num">${decimal(line.quantity)}</td><td class="num">${euro(line.unitCost)}</td>
       <td></td><td class="num">${euro(line.price)}</td></tr>`).join('');
-  const over = estimate.overLimitBy ? ` (riba viršyta ${euro(estimate.overLimitBy)})` : '';
+  const over = estimate.overLimitBy ? ` (viršyta ${euro(estimate.overLimitBy)})` : '';
   $('result').innerHTML = `<h2>Sąmata Nr. ${id}</h2>
     <table>
       <thead><tr><th>Kodas</th><th>Darbas / detalė</th><th class="num">Val. / kiekis</th>
@@ -143,7 +151,7 @@ function showEstimate({ id, estimate }) {
       <tr><td>PVM</td><td class="num">${euro(estimate.vat)}</td></tr>
       <tr><th>Iš viso</th><th class="num">${euro(estimate.total)}</th></tr>
     </table>
-    <p class="status">Būsena: ${estimate.status}${over}</p>`;
+    <p class="status">Būsena: ${STATUS[estimate.status]}${over}</p>`;
   if (estimate.status === 'LAUKIA_PATVIRTINIMO') {
     const approve = document.createElement('button');
     approve.textContent = 'Klientas patvirtino';
@@ -158,6 +166,11 @@ function showEstimate({ id, estimate }) {
 $('estimate-form').onsubmit = async event => {
   event.preventDefault();
   const { ok, data } = await api('POST', '/api/estimates', readRequest());
+  ok ? showEstimate(data) : showErrors(data.errors);
+};
+$('view').onclick = async () => {
+  if (!$('estimate-id').value) { showErrors(['Įveskite sąmatos numerį']); return; }
+  const { ok, data } = await api('GET', `/api/estimates/${encodeURIComponent($('estimate-id').value)}`);
   ok ? showEstimate(data) : showErrors(data.errors);
 };
 $('workshop').onchange = loadWorks;

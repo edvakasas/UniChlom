@@ -3,8 +3,8 @@
   "regularCustomer": false,
   "workCodes": ["D01", "D03"],
   "parts": [
-    {"name": "Stabdžių kaladėlės", "unitCost": 30.00, "quantity": 1},
-    {"name": "Alyva 5W-30, l", "unitCost": 8.00, "quantity": 4},
-    {"name": "Alyvos filtras", "unitCost": 6.50, "quantity": 1}
+    {"name": "Stabdžių kaladėlės", "unitCost": 30.00, "qty": 1},
+    {"name": "Alyva 5W-30, l", "unitCost": 8.00, "qty": 4},
+    {"name": "Alyvos filtras", "unitCost": 6.50, "qty": 1}
   ]
 }

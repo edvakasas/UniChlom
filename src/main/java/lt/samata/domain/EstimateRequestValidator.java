@@ -53,7 +53,7 @@ public class EstimateRequestValidator {
             return;
         }
         String label = "Detalės „" + part.name() + "“ ";
-        BigDecimal quantity = part.quantity();
+        BigDecimal quantity = part.qty();
         if (quantity == null || quantity.signum() <= 0) {
             errors.add(label + "kiekis turi būti didesnis už 0");
         } else if (quantity.stripTrailingZeros().scale() > MAX_QUANTITY_DECIMALS) {

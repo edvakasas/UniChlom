@@ -6,7 +6,7 @@ INSERT INTO workshop (id, name, hourly_rate, parts_markup_percent, regular_custo
 VALUES ('alfa', 'Autoservisas Alfa', 40.00, 20, 5, 21, 1.00, 1.20, 1.30),
        ('beta', 'Autoservisas Beta', 45.00, 15, 10, 21, 1.00, 1.15, 1.25);
 
-INSERT INTO work_item (id, workshop_id, code, name, norm_hours, shared_operation, shared_operation_hours, promotion_percent)
+INSERT INTO work_item (id, tenant_id, code, name, norm_hours, shared_operation, shared_operation_hours, promotion_percent)
 VALUES (1, 'alfa', 'D01', 'Priekinių stabdžių kaladėlių keitimas', 1.0, 'PRIEKINIAI_RATAI', 0.4, NULL),
        (2, 'alfa', 'D02', 'Priekinių stabdžių diskų keitimas', 1.6, 'PRIEKINIAI_RATAI', 0.4, NULL),
        (3, 'alfa', 'D03', 'Variklio alyvos ir filtro keitimas', 0.5, NULL, NULL, NULL),

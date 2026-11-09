@@ -21,6 +21,6 @@ public record EstimateRequest(String carClass,
     }
 
     /** A part with its purchase price per unit (without VAT) and quantity (pieces or litres). */
-    public record PartRequest(String name, BigDecimal unitCost, BigDecimal quantity) {
+    public record PartRequest(String name, BigDecimal unitCost, BigDecimal qty) {
     }
 }

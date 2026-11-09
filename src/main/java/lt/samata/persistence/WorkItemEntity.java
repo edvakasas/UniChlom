@@ -1,5 +1,6 @@
 package lt.samata.persistence;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -14,6 +15,7 @@ public class WorkItemEntity {
 
     @Id
     private Long id;
+    @Column(name = "tenant_id", nullable = false)
     private String workshopId;
     private String code;
     private String name;

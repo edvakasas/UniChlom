@@ -26,7 +26,7 @@ public class EstimateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "tenant_id", nullable = false)
     private String workshopId;
 
     @Enumerated(EnumType.STRING)

@@ -25,8 +25,8 @@ class EstimateApiTest {
     void estimateOverLimit_isSaved_thenApproved() throws Exception {
         String request = """
                 {"carClass": "VISUREIGIS", "regularCustomer": true, "workCodes": ["D01", "D02", "D05"],
-                 "parts": [{"name": "Stabdžių kaladėlės", "unitCost": 30.00, "quantity": 1},
-                           {"name": "Stabdžių diskai", "unitCost": 45.00, "quantity": 2}],
+                 "parts": [{"name": "Stabdžių kaladėlės", "unitCost": 30.00, "qty": 1},
+                           {"name": "Stabdžių diskai", "unitCost": 45.00, "qty": 2}],
                  "priceLimit": 250.00}
                 """;
 

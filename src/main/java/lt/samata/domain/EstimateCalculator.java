@@ -93,9 +93,9 @@ public class EstimateCalculator {
     private PartLine partLine(EstimateRequest.PartRequest part, BigDecimal markupPercent) {
         BigDecimal price = Money.round(part.unitCost()
                 .multiply(HUNDRED.add(markupPercent))
-                .multiply(part.quantity())
+                .multiply(part.qty())
                 .divide(HUNDRED));
-        return new PartLine(part.name(), part.unitCost(), part.quantity(), price);
+        return new PartLine(part.name(), part.unitCost(), part.qty(), price);
     }
 
     /** R6 + R7: totals with VAT, then the status against the customer's price limit. */

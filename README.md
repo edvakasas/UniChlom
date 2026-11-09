@@ -41,6 +41,7 @@ mvn test
 | `EstimateCalculatorTest.normalCase_...` | Normal case: D01 + D03 with parts → total **€172.06**, status `PARENGTA` |
 | `EstimateCalculatorTest.boundary_...` | Total exactly equal to the customer's limit (€172.06) → still `PARENGTA` |
 | `EstimateCalculatorTest.conflict_...` | Shared operation charged once, largest discount wins (20 % not 25 %), limit exceeded → **€326.22**, `LAUKIA_PATVIRTINIMO`, over by €76.22 |
+| `EstimateCalculatorTest.rounding_...` | Half a cent rounds up: VAT 4.305 → **€4.31** (the risk named in the design document) |
 | `EstimateCalculatorTest.error_...` | Other workshop's job code and zero quantity → rejected with both messages, nothing calculated |
 | `TenantIsolationTest` (3 tests) | Workshop `alfa` cannot read, list or approve workshop `beta`'s estimate, nor use `beta`'s price list |
 | `EstimateApiTest` | The demo scenario through HTTP and the database, then approval (and a second approval is refused) |
@@ -68,6 +69,7 @@ The workshop is chosen with the `X-Tenant-Id` header (`alfa` or `beta`). In stag
 1. Main scenario: workshop *Autoservisas Alfa*, class `VISUREIGIS`, tick *Nuolatinis klientas*, limit `250`, jobs D01, D02, D05, parts *Stabdžių kaladėlės* 30.00 × 1 and *Stabdžių diskai* 45.00 × 2 → **€326.22**, *LAUKIA_PATVIRTINIMO (riba viršyta 76.22 €)*.
 2. Click *Klientas patvirtino* → *PATVIRTINTA*.
 3. Error: switch the workshop to *Beta*, tick B03, set a part quantity to 0 → the errors are listed in red and nothing is saved. (Choosing Beta also shows that each workshop sees only its own jobs.)
+4. Isolation: with *Beta* selected, enter the number of Alfa's estimate under *Išsaugota sąmata* and click *Peržiūrėti* → *Sąmata nerasta*. Switch back to *Alfa* → it shows.
 
 **With Swagger UI:** open <http://localhost:8080/swagger-ui.html>, pick an endpoint, click *Try it out*, enter `alfa` as `X-Tenant-Id` and paste a file from [`demo/`](demo) as the body.
 
@@ -117,7 +119,8 @@ Design choices:
 ## Differences from the Stage I plan
 
 - **Database:** the plan said a file-based H2 database; the prototype uses in-memory H2, so every start gives the same clean sample data for the demo and the tests. Switching to a file or PostgreSQL is a change in `application.properties` only.
-- **Interface:** the plan's simple HTML form is there; Swagger UI was added as a second way to call the API.
+- **Interface:** the plan's simple HTML form is there (create, approve, view a saved estimate by number); Swagger UI was added as a second way to call the API.
+- **Entity names:** the plan listed `Tenant`, `PriceList`, `WorkItem`, `Estimate`. In code the tenant is `Workshop`, and the price list is not a table of its own: `Workshop.toPriceList()` builds it from the workshop's rates and its `work_item` rows. The tenant column is `tenant_id`, as planned.
 - **Seeded estimates:** quality check 4.2 in the design document mentions three saved estimates per workshop; the prototype seeds none and the isolation tests create their own. The full 4.2 check is planned for stage III.
 
 ## Tech stack

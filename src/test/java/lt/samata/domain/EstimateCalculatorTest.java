@@ -82,6 +82,20 @@ class EstimateCalculatorTest {
     }
 
     @Test
+    void rounding_halfCentRoundsUp() {
+        // part 0.42 × 1.2 = 0.504 -> 0.50; subtotal 20.50; VAT 20.50 × 21 % = 4.305 -> 4.31 (HALF_EVEN would give 4.30)
+        EstimateRequest request = new EstimateRequest("LENGVASIS", false, List.of("D03"),
+                List.of(part("Tarpinė", "0.42", "1")), null);
+
+        Estimate estimate = calculator.calculate(request, ALFA);
+
+        assertThat(estimate.partsTotal()).isEqualByComparingTo("0.50");
+        assertThat(estimate.subtotal()).isEqualByComparingTo("20.50");
+        assertThat(estimate.vat()).isEqualByComparingTo("4.31");
+        assertThat(estimate.total()).isEqualByComparingTo("24.81");
+    }
+
+    @Test
     void error_otherWorkshopCodeAndZeroQuantity_rejectedWithBothMessages() {
         EstimateRequest request = new EstimateRequest("LENGVASIS", false, List.of("D01", "B03"),
                 List.of(part("Stabdžių kaladėlės", "30.00", "0")), null);
