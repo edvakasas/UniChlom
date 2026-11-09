@@ -88,7 +88,7 @@ async function loadWorks() {
     const label = document.createElement('label');
     const promo = work.promotionPercent ? ` (akcija −${work.promotionPercent} %)` : '';
     label.innerHTML = `<input type="checkbox" value="${esc(work.code)}"> `;
-    label.append(`${work.code} ${work.name}, ${decimal(work.normHours)} h${promo}`);
+    label.append(`${work.code} ${work.name}, ${decimal(Number(work.normHours).toFixed(1))} h${promo}`);
     $('works').append(label);
   }
 }
@@ -121,8 +121,8 @@ function readRequest() {
   };
 }
 
-function showErrors(errors) {
-  $('result').innerHTML = '<h2>Sąmata nesudaryta</h2><ul class="errors"></ul>';
+function showErrors(errors, title = 'Sąmata nesudaryta') {
+  $('result').innerHTML = `<h2>${title}</h2><ul class="errors"></ul>`;
   for (const message of errors) {
     const item = document.createElement('li');
     item.textContent = message;
@@ -169,9 +169,9 @@ $('estimate-form').onsubmit = async event => {
   ok ? showEstimate(data) : showErrors(data.errors);
 };
 $('view').onclick = async () => {
-  if (!$('estimate-id').value) { showErrors(['Įveskite sąmatos numerį']); return; }
+  if (!$('estimate-id').value) { showErrors(['Įveskite sąmatos numerį'], 'Klaida'); return; }
   const { ok, data } = await api('GET', `/api/estimates/${encodeURIComponent($('estimate-id').value)}`);
-  ok ? showEstimate(data) : showErrors(data.errors);
+  ok ? showEstimate(data) : showErrors(data.errors, 'Klaida');
 };
 $('workshop').onchange = loadWorks;
 $('add-part').onclick = () => addPartRow();

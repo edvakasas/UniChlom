@@ -68,7 +68,7 @@ The workshop is chosen with the `X-Tenant-Id` header (`alfa` or `beta`). In stag
 
 1. Main scenario: workshop *Autoservisas Alfa*, class `VISUREIGIS`, tick *Nuolatinis klientas*, limit `250`, jobs D01, D02, D05, parts *Stabdžių kaladėlės* 30.00 × 1 and *Stabdžių diskai* 45.00 × 2 → **€326.22**, *LAUKIA_PATVIRTINIMO (riba viršyta 76.22 €)*.
 2. Click *Klientas patvirtino* → *PATVIRTINTA*.
-3. Error: switch the workshop to *Beta*, tick B03, set a part quantity to 0 → the errors are listed in red and nothing is saved. (Choosing Beta also shows that each workshop sees only its own jobs.)
+3. Error: untick all jobs and set a part quantity to 0 → both errors are listed in red and nothing is saved. The form only offers the selected workshop's own jobs, so the "unknown job code" error (another workshop's B03) is shown through Swagger UI with [`demo/3-klaida.json`](demo/3-klaida.json) → *"Nežinomas darbo kodas: B03"*.
 4. Isolation: with *Beta* selected, enter the number of Alfa's estimate under *Išsaugota sąmata* and click *Peržiūrėti* → *Sąmata nerasta*. Switch back to *Alfa* → it shows.
 
 **With Swagger UI:** open <http://localhost:8080/swagger-ui.html>, pick an endpoint, click *Try it out*, enter `alfa` as `X-Tenant-Id` and paste a file from [`demo/`](demo) as the body.
