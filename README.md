@@ -13,7 +13,7 @@ Course project for **Software Systems Design** at VILNIUS TECH. The idea comes f
 
 | Tool | Version |
 |---|---|
-| Java (JDK) | 21 |
+| Java (JDK) | 21 or newer (tested with 21 and 25) |
 | Maven | 3.9 or newer |
 
 Nothing else is needed: the database (H2) runs in memory inside the app. No API keys.
